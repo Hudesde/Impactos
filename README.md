@@ -28,7 +28,7 @@ Este proyecto está desplegado en GitHub Pages y es accesible públicamente en:
 
 Este proyecto se despliega automáticamente a GitHub Pages mediante GitHub Actions. Cada vez que se hace push a la rama `main`, el sitio se actualiza automáticamente.
 
-Para más detalles sobre el despliegue, consulta [README_DEPLOY.md](README_DEPLOY.md).
+Para configurar GitHub Pages por primera vez, consulta [SETUP_GITHUB_PAGES.md](SETUP_GITHUB_PAGES.md).
 
 ## 🎮 Cómo usar
 
