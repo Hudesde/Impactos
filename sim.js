@@ -8,9 +8,13 @@ const explosionSound = new Audio('sounds/explosion_01-6225.mp3');
 // Ajuste de tamaño del canvas (Responsive)
 function resizeCanvas() {
     const container = canvas.parentElement;
-    if (container) {
+    // En móvil landscape, el canvas ocupa todo
+    if (window.innerHeight < 500 && window.innerWidth > window.innerHeight) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    } else if (container) {
         canvas.width = container.clientWidth;
-        canvas.height = container.clientHeight - document.getElementById('controls').offsetHeight - 60; // Ajuste dinámico
+        canvas.height = container.clientHeight - document.getElementById('controls').offsetHeight - 60; 
     } else {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
@@ -18,6 +22,24 @@ function resizeCanvas() {
 }
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas(); // Llamada inicial
+
+// Toggle de Controles en Móvil
+const toggleBtn = document.getElementById('toggleControls');
+const controlsPanel = document.getElementById('controls');
+
+if (toggleBtn) {
+    toggleBtn.onclick = function() {
+        controlsPanel.classList.toggle('hidden-controls');
+        // Cambiar texto del botón
+        if (controlsPanel.classList.contains('hidden-controls')) {
+            toggleBtn.textContent = "⚙️ Configuración";
+            toggleBtn.style.opacity = "0.8";
+        } else {
+            toggleBtn.textContent = "❌ Cerrar";
+            toggleBtn.style.opacity = "1";
+        }
+    };
+}
 
 // Configuración de vehículos y sprites
 // 'baseSprite' es el prefijo del archivo (ej: 'Sedan' para 'Sedan0.png', 'Sedan1.png', etc.)
@@ -139,15 +161,17 @@ function run() {
     const damageA = getDamageLevel(deltaV_A);
     const damageB = getDamageLevel(deltaV_B);
 
-    const width = 120; 
-    const height = 60;
+    // Escala dinámica para móviles ("Chiquitiwito")
+    let isMobileLandscape = (window.innerHeight < 500 && window.innerWidth > window.innerHeight);
+    
+    const width = isMobileLandscape ? 80 : 120; 
+    const height = isMobileLandscape ? 40 : 60;
     
     // Ajuste de posición del suelo dinámico
     let groundY = canvas.height - 150;
     
-    // Si la pantalla es muy bajita (móvil horizontal), subir el suelo
-    if (canvas.height < 400) {
-        groundY = canvas.height - 80;
+    if (isMobileLandscape) {
+        groundY = canvas.height - 60; // Mucho más abajo para aprovechar pantalla
     } else if (canvas.width < 768) {
         groundY = canvas.height - 100;
     }
@@ -157,16 +181,16 @@ function run() {
     
     if (speedA === 0 && speedB > 0) {
         // A quieto en el centro, B viene de la derecha
-        xA = canvas.width / 2 - width / 2 - 50; // Un poco a la izquierda del centro exacto para dar espacio
-        xB = canvas.width - width - 20; // B al borde derecho
+        xA = canvas.width / 2 - width / 2 - (isMobileLandscape ? 30 : 50); 
+        xB = canvas.width - width - 20; 
     } else if (speedB === 0 && speedA > 0) {
         // B quieto en el centro, A viene de la izquierda
-        xB = canvas.width / 2 - width / 2 + 50; // Un poco a la derecha
-        xA = 20; // A al borde izquierdo
+        xB = canvas.width / 2 - width / 2 + (isMobileLandscape ? 30 : 50); 
+        xA = 20; 
     } else {
         // Ambos se mueven o ambos quietos -> Equidistantes
-        xA = 50;
-        xB = canvas.width - 170;
+        xA = isMobileLandscape ? 30 : 50;
+        xB = canvas.width - (isMobileLandscape ? 110 : 170);
     }
     
     let hasCollided = false;

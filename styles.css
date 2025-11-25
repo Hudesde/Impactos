@@ -216,58 +216,98 @@ button#simulate:active {
     }
 }
 
+/* Botón de Toggle para Móviles */
+.mobile-only {
+    display: none;
+}
+
 /* Ajustes para Móviles en Landscape (Horizontal) */
 @media (max-height: 500px) and (orientation: landscape) {
     h1 {
-        display: none; /* Ocultar título para ganar espacio */
+        display: none; 
+    }
+
+    .mobile-only {
+        display: block;
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 100;
+        background: #3498db;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-weight: bold;
+        cursor: pointer;
+        opacity: 0.8;
     }
 
     #controls {
-        padding: 5px;
-        gap: 5px;
-        margin-bottom: 0;
-        width: 100%;
-        justify-content: space-around;
-        align-items: center;
-        border-radius: 0;
+        position: absolute;
+        top: 40px;
+        left: 10px;
+        right: 10px;
+        width: auto;
+        background: rgba(44, 62, 80, 0.98);
+        padding: 10px;
+        gap: 10px;
+        border: 1px solid #3498db;
+        flex-wrap: wrap;
+        justify-content: center;
+        transition: transform 0.3s ease, opacity 0.3s ease;
+        z-index: 90;
+    }
+
+    #controls.hidden-controls {
+        transform: translateY(-150%);
+        opacity: 0;
+        pointer-events: none;
     }
 
     .control-group {
-        flex-direction: row; /* Controles en línea */
-        align-items: center;
-        gap: 5px;
+        flex-direction: column; /* Volver a columna para que quepa mejor en el popup */
+        align-items: flex-start;
+        gap: 2px;
+        flex: 1 1 40%;
     }
     
     .control-group label {
-        font-size: 11px;
-        margin-right: 2px;
-        white-space: nowrap;
+        font-size: 12px;
     }
 
     select, input {
-        font-size: 11px;
-        padding: 2px 5px;
-        height: 25px;
+        font-size: 12px;
+        padding: 4px;
+        height: auto;
+        width: 100%;
+        box-sizing: border-box;
     }
     
-    /* Sliders más compactos */
     input[type="range"] {
-        width: 80px;
+        width: 100%;
     }
 
     button#simulate {
-        font-size: 12px;
-        padding: 5px 15px;
-        height: 30px;
+        font-size: 14px;
+        padding: 8px 20px;
+        height: auto;
+        width: 100%;
+        margin-top: 5px;
     }
 
     .veh-info {
-        display: none; /* Ocultar info extra para ahorrar espacio */
+        display: block; /* Mostrar info de nuevo */
+        font-size: 10px;
     }
     
-    .help-main, .mini-help {
-        width: 25px;
-        height: 25px;
-        font-size: 14px;
+    /* Ajustar canvas para ocupar todo */
+    #scene {
+        height: 100vh !important;
+        width: 100vw !important;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1;
     }
 }
