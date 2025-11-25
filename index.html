@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Simulador de Choques</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<h1>Simulador de Choques</h1>
+<div id="controls">
+    <div class="control-group">
+        <label for="vehA">Vehículo A</label>
+        <select id="vehA">
+            <option value="Sedan">Sedán</option>
+            <option value="SUV">SUV</option>
+            <!-- <option value="Coupe">Coupé</option> -->
+            <!-- <option value="Offroad">Todoterreno</option> -->
+            <option value="Cybertruck">Cybertruck</option>
+            <!-- <option value="Motorcycle">Motocicleta</option> -->
+            <option value="TUCSUC">TUCSUC</option>
+        </select>
+        <div id="infoA" class="veh-info"></div>
+    </div>
+
+    <div class="control-group">
+        <label for="vehB">Vehículo B</label>
+        <select id="vehB">
+            <option value="Sedan">Sedán</option>
+            <option value="SUV">SUV</option>
+            <!-- <option value="Coupe">Coupé</option> -->
+            <!-- <option value="Offroad">Todoterreno</option> -->
+            <option value="Cybertruck">Cybertruck</option>
+            <!-- <option value="Motorcycle">Motocicleta</option> -->
+            <option value="TUCSUC">TUCSUC</option>
+        </select>
+        <div id="infoB" class="veh-info"></div>
+    </div>
+
+    <div class="control-group">
+        <label>Vel A: <span id="valA">80</span> km/h</label>
+        <input id="vA" type="range" min="0" max="160" step="5" value="80" oninput="document.getElementById('valA').textContent=this.value">
+    </div>
+    <div class="control-group">
+        <label>Vel B: <span id="valB">50</span> km/h</label>
+        <input id="vB" type="range" min="0" max="160" step="5" value="50" oninput="document.getElementById('valB').textContent=this.value">
+    </div>
+    <div class="control-group">
+        <label>Restitución (e): 
+            <input id="rest" type="number" step="0.1" value="0.5" max="1" min="0">
+            <button id="restHelpBtn" class="mini-help">?</button>
+        </label>
+    </div>
+    
+    <button id="simulate">Simular</button>
+    <button id="helpBtn" class="help-main">?</button>
+</div>
+
+<!-- Modales de Ayuda -->
+<div id="mainHelpModal" class="modal hidden">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2>Cómo usar el Simulador</h2>
+        <p>1. <strong>Selecciona los vehículos:</strong> Elige el tipo de vehículo para el lado A (izquierda) y B (derecha). Cada uno tiene diferente masa.</p>
+        <p>2. <strong>Define las velocidades:</strong> Ingresa la velocidad en km/h. El Vehículo A viaja hacia la derecha y el B hacia la izquierda.</p>
+        <p>3. <strong>Coeficiente de Restitución:</strong> Define qué tan "elástico" es el choque (ver ayuda específica).</p>
+        <p>4. <strong>Simular:</strong> Presiona el botón para ver la colisión y los resultados físicos.</p>
+    </div>
+</div>
+
+<div id="restHelpModal" class="modal hidden">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2>Coeficiente de Restitución (e)</h2>
+        <p>Es un número entre 0 y 1 que indica qué tanta energía cinética se conserva.</p>
+        <ul>
+            <li><strong>1 (Elástico):</strong> Los objetos rebotan perfectamente (como bolas de billar).</li>
+            <li><strong>0 (Inelástico):</strong> Los objetos se quedan pegados tras el choque (como plastilina).</li>
+            <li><strong>0.5 (Realista):</strong> Los autos se deforman y pierden energía.</li>
+        </ul>
+    </div>
+</div>
+
+<canvas id="scene" height="400"></canvas>
+<script src="sim.js"></script>
+</body>
+</html>
