@@ -141,7 +141,16 @@ function run() {
 
     const width = 120; 
     const height = 60;
-    const groundY = canvas.height - 150; 
+    
+    // Ajuste de posición del suelo dinámico
+    let groundY = canvas.height - 150;
+    
+    // Si la pantalla es muy bajita (móvil horizontal), subir el suelo
+    if (canvas.height < 400) {
+        groundY = canvas.height - 80;
+    } else if (canvas.width < 768) {
+        groundY = canvas.height - 100;
+    }
 
     // Lógica de Posicionamiento Inicial
     let xA, xB;
