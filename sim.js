@@ -164,14 +164,26 @@ function run() {
     // Escala dinámica para móviles ("Chiquitiwito")
     let isMobileLandscape = (window.innerHeight < 500 && window.innerWidth > window.innerHeight);
     
-    const width = isMobileLandscape ? 80 : 120; 
-    const height = isMobileLandscape ? 40 : 60;
+    // Reducción al 50% del tamaño original (120x60 -> 60x30)
+    const width = isMobileLandscape ? 60 : 120; 
+    const height = isMobileLandscape ? 30 : 60;
     
     // Ajuste de posición del suelo dinámico
     let groundY = canvas.height - 150;
     
     if (isMobileLandscape) {
-        groundY = canvas.height - 60; // Mucho más abajo para aprovechar pantalla
+        groundY = canvas.height - 50; // Muy abajo para dejar espacio al cielo
+        
+        // Auto-ocultar controles al simular en móvil
+        const controlsPanel = document.getElementById('controls');
+        const toggleBtn = document.getElementById('toggleControls');
+        if (controlsPanel && !controlsPanel.classList.contains('hidden-controls')) {
+             controlsPanel.classList.add('hidden-controls');
+             if (toggleBtn) {
+                 toggleBtn.textContent = "⚙️ Configuración";
+                 toggleBtn.style.opacity = "0.8";
+             }
+        }
     } else if (canvas.width < 768) {
         groundY = canvas.height - 100;
     }
@@ -181,16 +193,16 @@ function run() {
     
     if (speedA === 0 && speedB > 0) {
         // A quieto en el centro, B viene de la derecha
-        xA = canvas.width / 2 - width / 2 - (isMobileLandscape ? 30 : 50); 
-        xB = canvas.width - width - 20; 
+        xA = canvas.width / 2 - width / 2 - (isMobileLandscape ? 20 : 50); 
+        xB = canvas.width - width - (isMobileLandscape ? 10 : 20); 
     } else if (speedB === 0 && speedA > 0) {
         // B quieto en el centro, A viene de la izquierda
-        xB = canvas.width / 2 - width / 2 + (isMobileLandscape ? 30 : 50); 
-        xA = 20; 
+        xB = canvas.width / 2 - width / 2 + (isMobileLandscape ? 20 : 50); 
+        xA = (isMobileLandscape ? 10 : 20); 
     } else {
         // Ambos se mueven o ambos quietos -> Equidistantes
-        xA = isMobileLandscape ? 30 : 50;
-        xB = canvas.width - (isMobileLandscape ? 110 : 170);
+        xA = isMobileLandscape ? 20 : 50;
+        xB = canvas.width - (isMobileLandscape ? 80 : 170);
     }
     
     let hasCollided = false;
@@ -251,12 +263,16 @@ function run() {
     function drawArrow(x, y, velocity, color) {
         if (Math.abs(velocity) < 0.1) return; // No dibujar si está casi quieto
         
+        // Escala para móvil
+        let isMobileLandscape = (window.innerHeight < 500 && window.innerWidth > window.innerHeight);
+        let scale = isMobileLandscape ? 0.6 : 1.0;
+
         ctx.save();
         ctx.fillStyle = color;
         ctx.strokeStyle = color;
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 3 * scale;
         
-        const arrowLen = 40;
+        const arrowLen = 40 * scale;
         const dir = velocity > 0 ? 1 : -1;
         
         ctx.beginPath();
@@ -267,13 +283,13 @@ function run() {
         // Punta de flecha
         ctx.beginPath();
         ctx.moveTo(x + arrowLen * dir, y);
-        ctx.lineTo(x + (arrowLen - 10) * dir, y - 5);
-        ctx.lineTo(x + (arrowLen - 10) * dir, y + 5);
+        ctx.lineTo(x + (arrowLen - 10 * scale) * dir, y - 5 * scale);
+        ctx.lineTo(x + (arrowLen - 10 * scale) * dir, y + 5 * scale);
         ctx.fill();
         
-        ctx.font = 'bold 16px Arial';
+        ctx.font = `bold ${Math.max(10, 16 * scale)}px Arial`;
         ctx.textAlign = 'center';
-        ctx.fillText(`${Math.abs(velocity).toFixed(1)} km/h`, x + (arrowLen/2)*dir, y - 10);
+        ctx.fillText(`${Math.abs(velocity).toFixed(1)} km/h`, x + (arrowLen/2)*dir, y - 10 * scale);
         
         ctx.restore();
     }

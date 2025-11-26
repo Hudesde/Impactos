@@ -245,18 +245,18 @@ button#simulate:active {
 
     #controls {
         position: absolute;
-        top: 40px;
-        left: 10px;
-        right: 10px;
-        width: auto;
+        top: 35px;
+        left: 5%;
+        width: 90%;
         background: rgba(44, 62, 80, 0.98);
-        padding: 10px;
-        gap: 10px;
+        padding: 5px;
+        gap: 4px;
         border: 1px solid #3498db;
         flex-wrap: wrap;
-        justify-content: center;
+        justify-content: space-between; /* Distribución más compacta */
         transition: transform 0.3s ease, opacity 0.3s ease;
         z-index: 90;
+        border-radius: 8px;
     }
 
     #controls.hidden-controls {
@@ -266,34 +266,42 @@ button#simulate:active {
     }
 
     .control-group {
-        flex-direction: column; /* Volver a columna para que quepa mejor en el popup */
-        align-items: flex-start;
-        gap: 2px;
-        flex: 1 1 40%;
+        flex-direction: row; /* En fila para ahorrar altura */
+        align-items: center;
+        justify-content: space-between;
+        gap: 5px;
+        flex: 1 1 48%; /* Dos columnas */
+        background: rgba(0,0,0,0.2);
+        padding: 2px 5px;
+        border-radius: 4px;
     }
     
     .control-group label {
-        font-size: 12px;
+        font-size: 10px;
+        margin: 0;
     }
 
     select, input {
-        font-size: 12px;
-        padding: 4px;
-        height: auto;
-        width: 100%;
-        box-sizing: border-box;
+        font-size: 10px;
+        padding: 2px;
+        height: 20px;
+        width: 60%; /* Input más pequeño */
     }
     
     input[type="range"] {
-        width: 100%;
+        width: 60%;
+    }
+
+    /* Grupo de restitución y botón simular ocupan ancho completo si es necesario */
+    .control-group:last-of-type, button#simulate {
+        flex: 1 1 100%;
     }
 
     button#simulate {
-        font-size: 14px;
-        padding: 8px 20px;
-        height: auto;
-        width: 100%;
-        margin-top: 5px;
+        font-size: 12px;
+        padding: 4px;
+        margin-top: 2px;
+        height: 25px;
     }
 
     .veh-info {
