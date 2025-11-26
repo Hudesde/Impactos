@@ -111,6 +111,9 @@ function run() {
     // Asegurar que el canvas tenga el tamaño correcto antes de empezar
     resizeCanvas();
 
+    // Factor de escala global basado en la altura (Base 600px)
+    const scaleFactor = Math.min(1, canvas.height / 600);
+
     const typeA = document.getElementById('vehA').value;
     const typeB = document.getElementById('vehB').value;
     
@@ -164,16 +167,14 @@ function run() {
     // Escala dinámica para móviles ("Chiquitiwito")
     let isMobileLandscape = (window.innerHeight < 500 && window.innerWidth > window.innerHeight);
     
-    // Reducción al 50% del tamaño original (120x60 -> 60x30)
-    const width = isMobileLandscape ? 60 : 120; 
-    const height = isMobileLandscape ? 30 : 60;
+    // Reducción basada en scaleFactor
+    const width = 120 * scaleFactor; 
+    const height = 60 * scaleFactor;
     
     // Ajuste de posición del suelo dinámico
-    let groundY = canvas.height - 150;
+    let groundY = canvas.height - (150 * scaleFactor);
     
     if (isMobileLandscape) {
-        groundY = canvas.height - 50; // Muy abajo para dejar espacio al cielo
-        
         // Auto-ocultar controles al simular en móvil
         const controlsPanel = document.getElementById('controls');
         const toggleBtn = document.getElementById('toggleControls');
@@ -184,8 +185,6 @@ function run() {
                  toggleBtn.style.opacity = "0.8";
              }
         }
-    } else if (canvas.width < 768) {
-        groundY = canvas.height - 100;
     }
 
     // Lógica de Posicionamiento Inicial
@@ -193,16 +192,16 @@ function run() {
     
     if (speedA === 0 && speedB > 0) {
         // A quieto en el centro, B viene de la derecha
-        xA = canvas.width / 2 - width / 2 - (isMobileLandscape ? 20 : 50); 
-        xB = canvas.width - width - (isMobileLandscape ? 10 : 20); 
+        xA = canvas.width / 2 - width / 2 - (50 * scaleFactor); 
+        xB = canvas.width - width - (20 * scaleFactor); 
     } else if (speedB === 0 && speedA > 0) {
         // B quieto en el centro, A viene de la izquierda
-        xB = canvas.width / 2 - width / 2 + (isMobileLandscape ? 20 : 50); 
-        xA = (isMobileLandscape ? 10 : 20); 
+        xB = canvas.width / 2 - width / 2 + (50 * scaleFactor); 
+        xA = (20 * scaleFactor); 
     } else {
         // Ambos se mueven o ambos quietos -> Equidistantes
-        xA = isMobileLandscape ? 20 : 50;
-        xB = canvas.width - (isMobileLandscape ? 80 : 170);
+        xA = 50 * scaleFactor;
+        xB = canvas.width - width - (50 * scaleFactor);
     }
     
     let hasCollided = false;
@@ -229,43 +228,42 @@ function run() {
         stars.forEach(star => {
             ctx.globalAlpha = star.alpha;
             ctx.beginPath();
-            ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+            ctx.arc(star.x, star.y, star.size * scaleFactor, 0, Math.PI * 2);
             ctx.fill();
         });
         ctx.globalAlpha = 1.0;
 
         // Luna (Posición relativa al ancho)
-        const moonX = canvas.width - 100;
+        const moonX = canvas.width - (100 * scaleFactor);
         ctx.fillStyle = '#f1c40f';
         ctx.beginPath();
-        ctx.arc(moonX, 80, 40, 0, Math.PI * 2);
+        ctx.arc(moonX, 80 * scaleFactor, 40 * scaleFactor, 0, Math.PI * 2);
         ctx.fill();
         // Sombra de la luna
         ctx.fillStyle = '#1a1a1a'; 
         ctx.beginPath();
-        ctx.arc(moonX - 15, 70, 35, 0, Math.PI * 2);
+        ctx.arc(moonX - (15 * scaleFactor), 70 * scaleFactor, 35 * scaleFactor, 0, Math.PI * 2);
         ctx.fill();
 
         // Nubes
         ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
         ctx.beginPath();
-        ctx.ellipse(200, 100, 80, 30, 0, 0, Math.PI * 2);
+        ctx.ellipse(200 * scaleFactor, 100 * scaleFactor, 80 * scaleFactor, 30 * scaleFactor, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.beginPath();
-        ctx.ellipse(250, 120, 70, 35, 0, 0, Math.PI * 2);
+        ctx.ellipse(250 * scaleFactor, 120 * scaleFactor, 70 * scaleFactor, 35 * scaleFactor, 0, 0, Math.PI * 2);
         ctx.fill();
         
         ctx.beginPath();
-        ctx.ellipse(canvas.width * 0.6, 150, 100, 40, 0, 0, Math.PI * 2);
+        ctx.ellipse(canvas.width * 0.6, 150 * scaleFactor, 100 * scaleFactor, 40 * scaleFactor, 0, 0, Math.PI * 2);
         ctx.fill();
     }
 
     function drawArrow(x, y, velocity, color) {
         if (Math.abs(velocity) < 0.1) return; // No dibujar si está casi quieto
         
-        // Escala para móvil
-        let isMobileLandscape = (window.innerHeight < 500 && window.innerWidth > window.innerHeight);
-        let scale = isMobileLandscape ? 0.6 : 1.0;
+        // Usar scaleFactor global
+        let scale = scaleFactor;
 
         ctx.save();
         ctx.fillStyle = color;
@@ -298,11 +296,11 @@ function run() {
         ctx.save();
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
         ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-        ctx.font = '14px monospace';
+        ctx.font = `${14 * scaleFactor}px monospace`;
         ctx.lineWidth = 1;
 
         // Línea base del suelo
-        const roadTop = groundY + height - 5;
+        const roadTop = groundY + height - (5 * scaleFactor);
         const centerX = canvas.width / 2;
         
         // Línea horizontal de referencia
@@ -315,7 +313,7 @@ function run() {
         function drawTick(x, isCenter = false) {
             ctx.beginPath();
             ctx.moveTo(x, roadTop);
-            ctx.lineTo(x, roadTop + (isCenter ? 15 : 10));
+            ctx.lineTo(x, roadTop + (isCenter ? 15 * scaleFactor : 10 * scaleFactor));
             ctx.stroke();
         }
 
@@ -324,9 +322,9 @@ function run() {
         ctx.lineWidth = 2;
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
         ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        ctx.font = 'bold 16px monospace';
+        ctx.font = `bold ${16 * scaleFactor}px monospace`;
         drawTick(centerX, true);
-        ctx.fillText("0m", centerX - 10, roadTop + 30);
+        ctx.fillText("0m", centerX - (10 * scaleFactor), roadTop + (30 * scaleFactor));
         ctx.restore();
 
         function drawDistanceMarker(x, dist) {
@@ -335,46 +333,48 @@ function run() {
              // Señal cada 25m
              if (Math.abs(dist) % 25 === 0) {
                 // Dibujar Señal
-                const signX = x - 15;
-                const signY = roadTop - 50;
+                const signW = 30 * scaleFactor;
+                const signH = 50 * scaleFactor;
+                const signX = x - (signW / 2);
+                const signY = roadTop - signH;
                 
                 if (signImage.complete && signImage.naturalWidth !== 0) {
-                    ctx.drawImage(signImage, signX, signY, 30, 50);
+                    ctx.drawImage(signImage, signX, signY, signW, signH);
                 } else {
                     // Fallback
                     ctx.fillStyle = '#7f8c8d'; // Poste
-                    ctx.fillRect(x - 2, roadTop - 40, 4, 40);
+                    ctx.fillRect(x - (2 * scaleFactor), roadTop - (40 * scaleFactor), 4 * scaleFactor, 40 * scaleFactor);
                     ctx.fillStyle = '#f1c40f'; // Señal
-                    ctx.fillRect(x - 12, roadTop - 55, 24, 24);
+                    ctx.fillRect(x - (12 * scaleFactor), roadTop - (55 * scaleFactor), 24 * scaleFactor, 24 * scaleFactor);
                     ctx.strokeStyle = '#000';
-                    ctx.strokeRect(x - 12, roadTop - 55, 24, 24);
+                    ctx.strokeRect(x - (12 * scaleFactor), roadTop - (55 * scaleFactor), 24 * scaleFactor, 24 * scaleFactor);
                 }
 
                 // Texto en la señal
                 ctx.save();
                 ctx.fillStyle = 'black';
-                ctx.font = 'bold 11px Arial';
+                ctx.font = `bold ${11 * scaleFactor}px Arial`;
                 ctx.textAlign = 'center';
                 // Ajustar posición vertical para que quede dentro del cuadro amarillo
-                ctx.fillText(`${Math.abs(dist)}`, x, roadTop - 38); 
+                ctx.fillText(`${Math.abs(dist)}`, x, roadTop - (38 * scaleFactor)); 
                 ctx.restore();
 
              } else {
                  // Texto en la carretera (normal)
-                 ctx.fillText(`${dist}m`, x - 15, roadTop + 30);
+                 ctx.fillText(`${dist}m`, x - (15 * scaleFactor), roadTop + (30 * scaleFactor));
              }
         }
 
         // Hacia la derecha (Positivos)
         let dist = 0;
-        for (let x = centerX + 50; x < canvas.width; x += 50) {
+        for (let x = centerX + (50 * scaleFactor); x < canvas.width; x += (50 * scaleFactor)) {
             dist += 5; // 50px = 5m
             drawDistanceMarker(x, dist);
         }
 
         // Hacia la izquierda (Negativos)
         dist = 0;
-        for (let x = centerX - 50; x > 0; x -= 50) {
+        for (let x = centerX - (50 * scaleFactor); x > 0; x -= (50 * scaleFactor)) {
             dist -= 5;
             drawDistanceMarker(x, dist);
         }
@@ -401,17 +401,17 @@ function run() {
 
         // Dibujar carretera
         ctx.fillStyle = '#2c3e50';
-        ctx.fillRect(0, groundY + height - 5, canvas.width, 150);
+        ctx.fillRect(0, groundY + height - (5 * scaleFactor), canvas.width, 150 * scaleFactor);
         
         // Dibujar Grid/Regla
         drawGrid();
         
         ctx.strokeStyle = '#f1c40f';
-        ctx.lineWidth = 4;
-        ctx.setLineDash([30, 30]);
+        ctx.lineWidth = 4 * scaleFactor;
+        ctx.setLineDash([30 * scaleFactor, 30 * scaleFactor]);
         ctx.beginPath();
-        ctx.moveTo(0, groundY + height + 45);
-        ctx.lineTo(canvas.width, groundY + height + 45);
+        ctx.moveTo(0, groundY + height + (45 * scaleFactor));
+        ctx.lineTo(canvas.width, groundY + height + (45 * scaleFactor));
         ctx.stroke();
         ctx.setLineDash([]);
 
@@ -424,24 +424,24 @@ function run() {
             ctx.drawImage(images[typeA][spriteIndexA], xA, groundY, width, height);
         } else {
             ctx.fillStyle = hasCollided && damageA > 1 ? '#555' : '#3498db';
-            ctx.fillRect(xA, groundY + 10, width, height - 10);
+            ctx.fillRect(xA, groundY + (10 * scaleFactor), width, height - (10 * scaleFactor));
             ctx.fillStyle = 'white';
-            ctx.font = '18px Arial';
-            ctx.fillText(typeA, xA + 10, groundY + 30);
+            ctx.font = `${18 * scaleFactor}px Arial`;
+            ctx.fillText(typeA, xA + (10 * scaleFactor), groundY + (30 * scaleFactor));
         }
         // Etiqueta A y Flecha
         ctx.fillStyle = '#3498db';
-        ctx.font = 'bold 24px Arial';
-        ctx.fillText("A", xA + width/2 - 5, groundY - 10);
+        ctx.font = `bold ${24 * scaleFactor}px Arial`;
+        ctx.fillText("A", xA + width/2 - (5 * scaleFactor), groundY - (10 * scaleFactor));
         
         if (hasCollided && Math.abs(currentVA) < 0.1) {
             ctx.save();
             ctx.textAlign = 'center';
-            ctx.font = 'bold 18px Arial';
-            ctx.fillText(`Vel. Final: ${vA_final.toFixed(1)} km/h`, xA + width/2, groundY - 30);
+            ctx.font = `bold ${18 * scaleFactor}px Arial`;
+            ctx.fillText(`Vel. Final: ${vA_final.toFixed(1)} km/h`, xA + width/2, groundY - (30 * scaleFactor));
             ctx.restore();
         } else {
-            drawArrow(xA + width/2, groundY - 30, currentVA, '#3498db');
+            drawArrow(xA + width/2, groundY - (30 * scaleFactor), currentVA, '#3498db');
         }
 
 
@@ -453,25 +453,25 @@ function run() {
             ctx.drawImage(images[typeB][spriteIndexB], 0, 0, width, height);
         } else {
             ctx.fillStyle = hasCollided && damageB > 1 ? '#555' : '#e74c3c';
-            ctx.fillRect(xB, groundY + 10, width, height - 10);
+            ctx.fillRect(xB, groundY + (10 * scaleFactor), width, height - (10 * scaleFactor));
             ctx.fillStyle = 'white';
-            ctx.font = '18px Arial';
-            ctx.fillText(typeB, xB + 10, groundY + 30);
+            ctx.font = `${18 * scaleFactor}px Arial`;
+            ctx.fillText(typeB, xB + (10 * scaleFactor), groundY + (30 * scaleFactor));
         }
         ctx.restore();
         // Etiqueta B y Flecha
         ctx.fillStyle = '#e74c3c';
-        ctx.font = 'bold 24px Arial';
-        ctx.fillText("B", xB + width/2 - 5, groundY - 10);
+        ctx.font = `bold ${24 * scaleFactor}px Arial`;
+        ctx.fillText("B", xB + width/2 - (5 * scaleFactor), groundY - (10 * scaleFactor));
         
         if (hasCollided && Math.abs(currentVB) < 0.1) {
             ctx.save();
             ctx.textAlign = 'center';
-            ctx.font = 'bold 18px Arial';
-            ctx.fillText(`Vel. Final: ${vB_final.toFixed(1)} km/h`, xB + width/2, groundY - 30);
+            ctx.font = `bold ${18 * scaleFactor}px Arial`;
+            ctx.fillText(`Vel. Final: ${vB_final.toFixed(1)} km/h`, xB + width/2, groundY - (30 * scaleFactor));
             ctx.restore();
         } else {
-            drawArrow(xB + width/2, groundY - 30, currentVB, '#e74c3c');
+            drawArrow(xB + width/2, groundY - (30 * scaleFactor), currentVB, '#e74c3c');
         }
 
         // Mostrar datos de impacto
@@ -483,57 +483,60 @@ function run() {
             // Fondo semitransparente
             ctx.fillStyle = 'rgba(20, 20, 20, 0.9)';
             ctx.strokeStyle = '#34495e';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 2 * scaleFactor;
             
-            const boxHeight = 200; // Más alto para más datos
+            const boxHeight = 200 * scaleFactor; // Más alto para más datos
+            const boxWidth = 440 * scaleFactor;
+            const boxY = 20 * scaleFactor;
+
             if (ctx.roundRect) {
                 ctx.beginPath();
-                ctx.roundRect(centerX - 220, 20, 440, boxHeight, 10);
+                ctx.roundRect(centerX - (boxWidth / 2), boxY, boxWidth, boxHeight, 10 * scaleFactor);
                 ctx.fill();
                 ctx.stroke();
             } else {
-                ctx.fillRect(centerX - 220, 20, 440, boxHeight);
-                ctx.strokeRect(centerX - 220, 20, 440, boxHeight);
+                ctx.fillRect(centerX - (boxWidth / 2), boxY, boxWidth, boxHeight);
+                ctx.strokeRect(centerX - (boxWidth / 2), boxY, boxWidth, boxHeight);
             }
 
             ctx.fillStyle = 'white';
-            ctx.font = 'bold 24px "Segoe UI", sans-serif';
-            ctx.fillText(`RESULTADOS DEL IMPACTO`, centerX, 50);
+            ctx.font = `bold ${24 * scaleFactor}px "Segoe UI", sans-serif`;
+            ctx.fillText(`RESULTADOS DEL IMPACTO`, centerX, boxY + (30 * scaleFactor));
             
-            ctx.font = 'italic 18px "Segoe UI", sans-serif';
+            ctx.font = `italic ${18 * scaleFactor}px "Segoe UI", sans-serif`;
             ctx.fillStyle = '#f1c40f';
-            ctx.fillText(`Tipo: ${collisionType} (e=${e})`, centerX, 70);
+            ctx.fillText(`Tipo: ${collisionType} (e=${e})`, centerX, boxY + (50 * scaleFactor));
             
-            ctx.font = '18px "Segoe UI", sans-serif';
+            ctx.font = `${18 * scaleFactor}px "Segoe UI", sans-serif`;
             ctx.textAlign = 'left';
-            const leftCol = centerX - 200;
-            const rightCol = centerX + 20;
+            const leftCol = centerX - (200 * scaleFactor);
+            const rightCol = centerX + (20 * scaleFactor);
 
             // Columna A
             ctx.fillStyle = '#3498db';
-            ctx.font = 'bold 20px "Segoe UI", sans-serif';
-            ctx.fillText(`VEHÍCULO A (${typeA})`, leftCol, 100);
-            ctx.font = '18px "Segoe UI", sans-serif';
+            ctx.font = `bold ${20 * scaleFactor}px "Segoe UI", sans-serif`;
+            ctx.fillText(`VEHÍCULO A (${typeA})`, leftCol, boxY + (80 * scaleFactor));
+            ctx.font = `${18 * scaleFactor}px "Segoe UI", sans-serif`;
             ctx.fillStyle = '#ecf0f1';
-            ctx.fillText(`Vel. Inicial: ${vA_initial.toFixed(1)} km/h`, leftCol, 120);
-            ctx.fillText(`Vel. Final: ${vA_final.toFixed(1)} km/h`, leftCol, 140);
+            ctx.fillText(`Vel. Inicial: ${vA_initial.toFixed(1)} km/h`, leftCol, boxY + (100 * scaleFactor));
+            ctx.fillText(`Vel. Final: ${vA_final.toFixed(1)} km/h`, leftCol, boxY + (120 * scaleFactor));
             // Daño en pequeño
-            ctx.font = 'italic 16px "Segoe UI", sans-serif';
+            ctx.font = `italic ${16 * scaleFactor}px "Segoe UI", sans-serif`;
             ctx.fillStyle = '#95a5a6';
-            ctx.fillText(`Daño est.: ${damageTextA}`, leftCol, 170);
+            ctx.fillText(`Daño est.: ${damageTextA}`, leftCol, boxY + (150 * scaleFactor));
 
             // Columna B
             ctx.fillStyle = '#e74c3c';
-            ctx.font = 'bold 20px "Segoe UI", sans-serif';
-            ctx.fillText(`VEHÍCULO B (${typeB})`, rightCol, 100);
-            ctx.font = '18px "Segoe UI", sans-serif';
+            ctx.font = `bold ${20 * scaleFactor}px "Segoe UI", sans-serif`;
+            ctx.fillText(`VEHÍCULO B (${typeB})`, rightCol, boxY + (80 * scaleFactor));
+            ctx.font = `${18 * scaleFactor}px "Segoe UI", sans-serif`;
             ctx.fillStyle = '#ecf0f1';
-            ctx.fillText(`Vel. Inicial: ${Math.abs(vB_initial).toFixed(1)} km/h`, rightCol, 120);
-            ctx.fillText(`Vel. Final: ${vB_final.toFixed(1)} km/h`, rightCol, 140);
+            ctx.fillText(`Vel. Inicial: ${Math.abs(vB_initial).toFixed(1)} km/h`, rightCol, boxY + (100 * scaleFactor));
+            ctx.fillText(`Vel. Final: ${vB_final.toFixed(1)} km/h`, rightCol, boxY + (120 * scaleFactor));
             // Daño en pequeño
-            ctx.font = 'italic 16px "Segoe UI", sans-serif';
+            ctx.font = `italic ${16 * scaleFactor}px "Segoe UI", sans-serif`;
             ctx.fillStyle = '#95a5a6';
-            ctx.fillText(`Daño est.: ${damageTextB}`, rightCol, 170);
+            ctx.fillText(`Daño est.: ${damageTextB}`, rightCol, boxY + (150 * scaleFactor));
 
             ctx.restore();
         }
