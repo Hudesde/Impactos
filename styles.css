@@ -7,7 +7,8 @@ body {
     align-items: center;
     margin: 0;
     padding: 0;
-    height: 100vh;
+    height: 100vh; /* Fallback */
+    height: 100dvh; /* Mobile viewport fix */
     overflow: hidden;
 }
 
@@ -311,7 +312,7 @@ button#simulate:active {
     
     /* Ajustar canvas para ocupar todo */
     #scene {
-        height: 100vh !important;
+        height: 100dvh !important;
         width: 100vw !important;
         position: fixed;
         top: 0;

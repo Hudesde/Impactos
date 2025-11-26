@@ -185,6 +185,11 @@ function run() {
                  toggleBtn.style.opacity = "0.8";
              }
         }
+
+        // Intentar pantalla completa para ocultar barra de navegación
+        if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen().catch(e => console.log("Fullscreen blocked", e));
+        }
     }
 
     // Lógica de Posicionamiento Inicial
