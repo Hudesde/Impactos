@@ -83,6 +83,46 @@ document.getElementById('vehA').addEventListener('change', updateVehicleInfo);
 document.getElementById('vehB').addEventListener('change', updateVehicleInfo);
 updateVehicleInfo(); // Inicializar
 
+// Validación de velocidades para modo alcance
+document.getElementById('collisionType').addEventListener('change', function() {
+    if (this.value === 'alcance') {
+        const vA = Number(document.getElementById('vA').value);
+        const vB = Number(document.getElementById('vB').value);
+        if (vB >= vA) {
+            const newVB = Math.max(0, vA - 5);
+            document.getElementById('vB').value = newVB;
+            document.getElementById('valB').textContent = newVB;
+        }
+    }
+});
+
+// Validar cuando cambian los sliders en modo alcance
+document.getElementById('vA').addEventListener('input', function() {
+    const collisionType = document.getElementById('collisionType').value;
+    if (collisionType === 'alcance') {
+        const vA = Number(this.value);
+        const vB = Number(document.getElementById('vB').value);
+        if (vB >= vA) {
+            const newVB = Math.max(0, vA - 5);
+            document.getElementById('vB').value = newVB;
+            document.getElementById('valB').textContent = newVB;
+        }
+    }
+});
+
+document.getElementById('vB').addEventListener('input', function() {
+    const collisionType = document.getElementById('collisionType').value;
+    if (collisionType === 'alcance') {
+        const vA = Number(document.getElementById('vA').value);
+        const vB = Number(this.value);
+        if (vB >= vA) {
+            const newVB = Math.max(0, vA - 5);
+            this.value = newVB;
+            document.getElementById('valB').textContent = newVB;
+        }
+    }
+});
+
 // Modales
 const mainHelpModal = document.getElementById('mainHelpModal');
 const restHelpModal = document.getElementById('restHelpModal');
@@ -121,47 +161,68 @@ function run() {
     const mA = presets[typeA].m;
     const mB = presets[typeB].m;
     
-    const speedA = Number(document.getElementById('vA').value);
-    const speedB = Number(document.getElementById('vB').value);
+    let speedA = Number(document.getElementById('vA').value);
+    let speedB = Number(document.getElementById('vB').value);
     const e = Number(document.getElementById('rest').value);
+    const collisionTypeValue = document.getElementById('collisionType').value;
+    
+    // RESTRICCIÓN: En alcance, B debe ser menor que A
+    if (collisionTypeValue === 'alcance' && speedB >= speedA) {
+        speedB = Math.max(0, speedA - 5); // B al menos 5 km/h menor que A
+        document.getElementById('vB').value = speedB;
+        document.getElementById('valB').textContent = speedB;
+    }
 
-    // ============= FÍSICA DEL PROFESOR (VELOCIDADES SIEMPRE POSITIVAS) =============
-    // Velocidades iniciales SIEMPRE positivas (magnitudes)
-    let vA_i = speedA;
-    let vB_i = speedB;
+    // ============= FÍSICA SEGÚN TIPO DE CHOQUE =============
+    let vA_i, vB_i, vA_final, vB_final;
     
-    // Fórmulas del profesor (modelo simplificado para masas iguales):
-    const avg = (vA_i + vB_i) / 2;
-    const dv = (vA_i - vB_i);
-    
-    let vA_final = avg - e * dv / 2;
-    let vB_final = avg + e * dv / 2;
-    
-    // Regla especial: Si B venía más rápido que A, invertir signo de A_final
-    if (vA_i < vB_i) {
-        vA_final *= -1;
+    if (collisionTypeValue === 'alcance') {
+        // ALCANCE: Velocidades SIEMPRE positivas (modelo del profesor)
+        vA_i = speedA;
+        vB_i = speedB;
+        
+        const avg = (vA_i + vB_i) / 2;
+        const dv = (vA_i - vB_i);
+        
+        vA_final = avg - e * dv / 2;
+        vB_final = avg + e * dv / 2;
+        
+        // Regla especial: Si B venía más rápido que A, invertir signo de A_final
+        if (vA_i < vB_i) {
+            vA_final *= -1;
+        }
+    } else {
+        // FRONTAL: Velocidades con signo (direcciones opuestas)
+        vA_i = speedA;   // A → derecha (+)
+        vB_i = -speedB;  // B ← izquierda (-)
+        
+        // Fórmulas generales para colisión 1D
+        const totalMomentum = mA * vA_i + mB * vB_i;
+        const dv = vA_i - vB_i;
+        
+        vA_final = (totalMomentum - mB * e * dv) / (mA + mB);
+        vB_final = (totalMomentum + mA * e * dv) / (mA + mB);
     }
 
     // ==================== LOG DE RESULTADOS ====================
     const logReport = `
 ========================================
-SIMULACIÓN DE COLISIÓN (Modelo del Profesor)
+SIMULACIÓN DE COLISIÓN
 ========================================
+Tipo: ${collisionTypeValue === 'frontal' ? 'FRONTAL ↔' : 'ALCANCE →→'}
 Vehículo A: ${typeA} (${mA} kg) | Velocidad: ${speedA} km/h
 Vehículo B: ${typeB} (${mB} kg) | Velocidad: ${speedB} km/h
 Coeficiente e: ${e}
 
-FÍSICA (velocidades positivas):
+FÍSICA:
 vA_i = ${vA_i} km/h | vB_i = ${vB_i} km/h
-Promedio = ${avg.toFixed(1)} km/h | Δv = ${dv} km/h
-
-FÓRMULAS:
-vA_final = avg - e*dv/2 = ${avg.toFixed(1)} - ${e}*${dv}/2
-vB_final = avg + e*dv/2 = ${avg.toFixed(1)} + ${e}*${dv}/2
+${collisionTypeValue === 'alcance' ? 
+`Promedio = ${((vA_i + vB_i) / 2).toFixed(1)} km/h | Δv = ${vA_i - vB_i} km/h` : 
+`Momento = ${(mA * vA_i + mB * vB_i).toFixed(2)} | Δv = ${vA_i - vB_i} km/h`}
 
 RESULTADOS:
-vA_final = ${Math.trunc(vA_final * 100) / 100} km/h
-vB_final = ${Math.trunc(vB_final * 100) / 100} km/h`;
+vA_final = ${Math.trunc(vA_final * 100) / 100} km/h ${collisionTypeValue === 'frontal' ? (vA_final >= 0 ? '→' : '←') : ''}
+vB_final = ${Math.trunc(vB_final * 100) / 100} km/h ${collisionTypeValue === 'frontal' ? (vB_final >= 0 ? '→' : '←') : ''}`;
     
     console.log(logReport);
 
@@ -180,9 +241,9 @@ vB_final = ${Math.trunc(vB_final * 100) / 100} km/h`;
     const impulseB = mB * deltaV_B; // Deberían ser iguales por 3ra ley de Newton
 
     // Determinar tipo de choque
-    let collisionType = "Parcialmente Inelástico";
-    if (e === 1) collisionType = "Perfectamente Elástico";
-    else if (e === 0) collisionType = "Perfectamente Inelástico";
+    let collisionTypePhysics = "Parcialmente Inelástico";
+    if (e === 1) collisionTypePhysics = "Perfectamente Elástico";
+    else if (e === 0) collisionTypePhysics = "Perfectamente Inelástico";
 
     function getDamageText(deltaV) {
         if (deltaV < 15) return "Sin Daños";
@@ -237,30 +298,48 @@ B: ΔV=${deltaV_B.toFixed(1)} → ${damageTextB}
         }
     }
 
-    // Lógica de Posicionamiento Inicial (SIEMPRE FRONTAL para la animación)
+    // Lógica de Posicionamiento Inicial según tipo de choque
     let xA, xB;
     
-    if (speedA === 0 && speedB > 0) {
-        // A quieto en el centro, B viene de la derecha
-        xA = canvas.width / 2 - width / 2 - (50 * scaleFactor);
-        xB = canvas.width - width - (20 * scaleFactor);
-    } else if (speedB === 0 && speedA > 0) {
-        // B quieto en el centro, A viene de la izquierda
-        xB = canvas.width / 2 - width / 2 + (50 * scaleFactor);
-        xA = (20 * scaleFactor);
+    if (collisionTypeValue === 'frontal') {
+        // CHOQUE FRONTAL: A viene de izquierda, B viene de derecha
+        if (speedA === 0 && speedB > 0) {
+            xA = canvas.width / 2 - width / 2 - (50 * scaleFactor);
+            xB = canvas.width - width - (20 * scaleFactor);
+        } else if (speedB === 0 && speedA > 0) {
+            xB = canvas.width / 2 - width / 2 + (50 * scaleFactor);
+            xA = (20 * scaleFactor);
+        } else {
+            xA = 50 * scaleFactor;
+            xB = canvas.width - width - (50 * scaleFactor);
+        }
     } else {
-        // Ambos se mueven: choque frontal visual
-        xA = 50 * scaleFactor;
-        xB = canvas.width - width - (50 * scaleFactor);
+        // CHOQUE POR ALCANCE: ambos van hacia la derecha
+        // B está 25 metros (250 píxeles en escala 10px/metro) adelante de A
+        const PIXELS_PER_METER = 10;
+        const distanciaEntreVehiculos = 25 * PIXELS_PER_METER * scaleFactor;
+        
+        if (speedA === 0 && speedB > 0) {
+            // Caso especial: A quieto (no tiene sentido en alcance, pero lo manejamos)
+            xA = canvas.width / 2 - distanciaEntreVehiculos;
+            xB = xA + distanciaEntreVehiculos;
+        } else if (speedB === 0 && speedA > 0) {
+            // A alcanza a B que está quieto
+            xA = (20 * scaleFactor);
+            xB = xA + distanciaEntreVehiculos;
+        } else {
+            // Caso normal: A (más rápido) atrás, B (más lento) 25m adelante
+            xA = 50 * scaleFactor;
+            xB = xA + distanciaEntreVehiculos;
+        }
     }
     
     let hasCollided = false;
     let soundPlayed = false;
 
-    // Velocidades para la animación PRE-COLISIÓN (visual frontal)
-    // A viene de izquierda (+), B viene de derecha (-)
+    // Velocidades para la animación PRE-COLISIÓN
     let currentVA = speedA;
-    let currentVB = -speedB;
+    let currentVB = (collisionTypeValue === 'frontal') ? -speedB : speedB;
 
     // Generar estrellas estáticas
     const stars = [];
@@ -499,9 +578,16 @@ B: ΔV=${deltaV_B.toFixed(1)} → ${damageTextB}
         // Dibujar Vehículo B
         ctx.save();
         if (images[typeB] && images[typeB][spriteIndexB]) {
-            ctx.translate(xB + width, groundY);
-            ctx.scale(-1, 1);
-            ctx.drawImage(images[typeB][spriteIndexB], 0, 0, width, height);
+            // En modo FRONTAL, B viene de derecha a izquierda (flip horizontal)
+            // En modo ALCANCE, B va hacia la derecha (sin flip)
+            if (collisionTypeValue === 'frontal') {
+                ctx.translate(xB + width, groundY);
+                ctx.scale(-1, 1);
+                ctx.drawImage(images[typeB][spriteIndexB], 0, 0, width, height);
+            } else {
+                // Modo alcance: sin flip, mira a la derecha
+                ctx.drawImage(images[typeB][spriteIndexB], xB, groundY, width, height);
+            }
         } else {
             ctx.fillStyle = hasCollided && damageB > 1 ? '#555' : '#e74c3c';
             ctx.fillRect(xB, groundY + (10 * scaleFactor), width, height - (10 * scaleFactor));
@@ -556,7 +642,7 @@ B: ΔV=${deltaV_B.toFixed(1)} → ${damageTextB}
             
             ctx.font = `italic ${18 * scaleFactor}px "Segoe UI", sans-serif`;
             ctx.fillStyle = '#f1c40f';
-            ctx.fillText(`Tipo: ${collisionType} (e=${e})`, centerX, boxY + (50 * scaleFactor));
+            ctx.fillText(`Tipo: ${collisionTypeValue} (e=${e})`, centerX, boxY + (50 * scaleFactor));
             
             ctx.font = `${18 * scaleFactor}px "Segoe UI", sans-serif`;
             ctx.textAlign = 'left';

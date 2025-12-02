@@ -55,6 +55,14 @@
         <input id="vB" type="range" min="0" max="160" step="5" value="50" oninput="document.getElementById('valB').textContent=this.value">
     </div>
     <div class="control-group">
+        <label>Tipo de Choque:</label>
+        <select id="collisionType">
+            <option value="frontal">Frontal (↔)</option>
+            <option value="alcance">Alcance (→→)</option>
+        </select>
+    </div>
+    
+    <div class="control-group">
         <label>Restitución (e): 
             <input id="rest" type="number" step="0.1" value="0.5" max="1" min="0">
             <button id="restHelpBtn" class="mini-help">?</button>
