@@ -112,7 +112,8 @@ function run() {
     resizeCanvas();
 
     // Factor de escala global basado en la altura (Base 600px)
-    const scaleFactor = Math.min(1, canvas.height / 600);
+    // Establecer mínimo de 0.5 para evitar que todo sea microscópico
+    const scaleFactor = Math.max(0.5, Math.min(1, canvas.height / 600));
 
     const typeA = document.getElementById('vehA').value;
     const typeB = document.getElementById('vehB').value;
@@ -124,18 +125,54 @@ function run() {
     const speedB = Number(document.getElementById('vB').value);
     const e = Number(document.getElementById('rest').value);
 
-    // Convertir km/h a m/s para cálculos físicos (opcional, pero más correcto)
-    // Aquí mantenemos las unidades relativas del simulador original para no romper la escala visual
-    const vA_initial = speedA;
-    const vB_initial = -speedB;
+    // ============= FÍSICA DEL PROFESOR (VELOCIDADES SIEMPRE POSITIVAS) =============
+    // Velocidades iniciales SIEMPRE positivas (magnitudes)
+    let vA_i = speedA;
+    let vB_i = speedB;
+    
+    // Fórmulas del profesor (modelo simplificado para masas iguales):
+    const avg = (vA_i + vB_i) / 2;
+    const dv = (vA_i - vB_i);
+    
+    let vA_final = avg - e * dv / 2;
+    let vB_final = avg + e * dv / 2;
+    
+    // Regla especial: Si B venía más rápido que A, invertir signo de A_final
+    if (vA_i < vB_i) {
+        vA_final *= -1;
+    }
 
-    // Cálculo de velocidades finales
-    const vA_final = (mA * vA_initial + mB * vB_initial - mB * e * (vA_initial - vB_initial)) / (mA + mB);
-    const vB_final = vA_final + e * (vA_initial - vB_initial);
+    // ==================== LOG DE RESULTADOS ====================
+    const logReport = `
+========================================
+SIMULACIÓN DE COLISIÓN (Modelo del Profesor)
+========================================
+Vehículo A: ${typeA} (${mA} kg) | Velocidad: ${speedA} km/h
+Vehículo B: ${typeB} (${mB} kg) | Velocidad: ${speedB} km/h
+Coeficiente e: ${e}
+
+FÍSICA (velocidades positivas):
+vA_i = ${vA_i} km/h | vB_i = ${vB_i} km/h
+Promedio = ${avg.toFixed(1)} km/h | Δv = ${dv} km/h
+
+FÓRMULAS:
+vA_final = avg - e*dv/2 = ${avg.toFixed(1)} - ${e}*${dv}/2
+vB_final = avg + e*dv/2 = ${avg.toFixed(1)} + ${e}*${dv}/2
+
+RESULTADOS:
+vA_final = ${Math.trunc(vA_final * 100) / 100} km/h
+vB_final = ${Math.trunc(vB_final * 100) / 100} km/h`;
+    
+    console.log(logReport);
 
     // Cálculo de "Daño" basado en el cambio de velocidad (Delta V)
-    const deltaV_A = Math.abs(vA_final - vA_initial);
-    const deltaV_B = Math.abs(vB_final - vB_initial);
+    // Comparar contra velocidades iniciales con signo
+    const deltaV_A = Math.abs(vA_final - vA_i);
+    const deltaV_B = Math.abs(vB_final - vB_i);
+    
+    console.log("\n[ANÁLISIS DE DAÑO]");
+    console.log(`ΔV_A = |vA_final - vA_inicial| = |${vA_final.toFixed(3)} - ${vA_i}| = ${deltaV_A.toFixed(1)} km/h`);
+    console.log(`ΔV_B = |vB_final - vB_inicial| = |${vB_final.toFixed(3)} - ${vB_i}| = ${deltaV_B.toFixed(1)} km/h`);
     
     // Cálculo de Impulso (Cambio de momento) J = m * deltaV
     // Usamos valor absoluto para magnitud
@@ -163,6 +200,14 @@ function run() {
     const damageTextB = getDamageText(deltaV_B);
     const damageA = getDamageLevel(deltaV_A);
     const damageB = getDamageLevel(deltaV_B);
+    
+    const verification = `
+DAÑO:
+A: ΔV=${deltaV_A.toFixed(1)} → ${damageTextA}
+B: ΔV=${deltaV_B.toFixed(1)} → ${damageTextB}
+========================================`;
+    
+    console.log(verification);
 
     // Escala dinámica para móviles ("Chiquitiwito")
     let isMobileLandscape = (window.innerHeight < 500 && window.innerWidth > window.innerHeight);
@@ -192,19 +237,19 @@ function run() {
         }
     }
 
-    // Lógica de Posicionamiento Inicial
+    // Lógica de Posicionamiento Inicial (SIEMPRE FRONTAL para la animación)
     let xA, xB;
     
     if (speedA === 0 && speedB > 0) {
         // A quieto en el centro, B viene de la derecha
-        xA = canvas.width / 2 - width / 2 - (50 * scaleFactor); 
-        xB = canvas.width - width - (20 * scaleFactor); 
+        xA = canvas.width / 2 - width / 2 - (50 * scaleFactor);
+        xB = canvas.width - width - (20 * scaleFactor);
     } else if (speedB === 0 && speedA > 0) {
         // B quieto en el centro, A viene de la izquierda
-        xB = canvas.width / 2 - width / 2 + (50 * scaleFactor); 
-        xA = (20 * scaleFactor); 
+        xB = canvas.width / 2 - width / 2 + (50 * scaleFactor);
+        xA = (20 * scaleFactor);
     } else {
-        // Ambos se mueven o ambos quietos -> Equidistantes
+        // Ambos se mueven: choque frontal visual
         xA = 50 * scaleFactor;
         xB = canvas.width - width - (50 * scaleFactor);
     }
@@ -212,7 +257,8 @@ function run() {
     let hasCollided = false;
     let soundPlayed = false;
 
-    // Velocidades actuales (para simular fricción post-choque)
+    // Velocidades para la animación PRE-COLISIÓN (visual frontal)
+    // A viene de izquierda (+), B viene de derecha (-)
     let currentVA = speedA;
     let currentVB = -speedB;
 
@@ -221,7 +267,7 @@ function run() {
     for(let i=0; i<100; i++) {
         stars.push({
             x: Math.random() * canvas.width,
-            y: Math.random() * (groundY - 50),
+            y: Math.random() * (groundY - (50 * scaleFactor)),
             size: Math.random() * 2,
             alpha: Math.random()
         });
@@ -443,7 +489,7 @@ function run() {
             ctx.save();
             ctx.textAlign = 'center';
             ctx.font = `bold ${18 * scaleFactor}px Arial`;
-            ctx.fillText(`Vel. Final: ${vA_final.toFixed(1)} km/h`, xA + width/2, groundY - (30 * scaleFactor));
+            ctx.fillText(`Vel. Final: ${Math.trunc(Math.abs(vA_final) * 100) / 100} km/h`, xA + width/2, groundY - (30 * scaleFactor));
             ctx.restore();
         } else {
             drawArrow(xA + width/2, groundY - (30 * scaleFactor), currentVA, '#3498db');
@@ -473,7 +519,7 @@ function run() {
             ctx.save();
             ctx.textAlign = 'center';
             ctx.font = `bold ${18 * scaleFactor}px Arial`;
-            ctx.fillText(`Vel. Final: ${vB_final.toFixed(1)} km/h`, xB + width/2, groundY - (30 * scaleFactor));
+            ctx.fillText(`Vel. Final: ${Math.trunc(Math.abs(vB_final) * 100) / 100} km/h`, xB + width/2, groundY - (30 * scaleFactor));
             ctx.restore();
         } else {
             drawArrow(xB + width/2, groundY - (30 * scaleFactor), currentVB, '#e74c3c');
@@ -523,8 +569,8 @@ function run() {
             ctx.fillText(`VEHÍCULO A (${typeA})`, leftCol, boxY + (80 * scaleFactor));
             ctx.font = `${18 * scaleFactor}px "Segoe UI", sans-serif`;
             ctx.fillStyle = '#ecf0f1';
-            ctx.fillText(`Vel. Inicial: ${vA_initial.toFixed(1)} km/h`, leftCol, boxY + (100 * scaleFactor));
-            ctx.fillText(`Vel. Final: ${vA_final.toFixed(1)} km/h`, leftCol, boxY + (120 * scaleFactor));
+            ctx.fillText(`Vel. Inicial: ${speedA.toFixed(1)} km/h`, leftCol, boxY + (100 * scaleFactor));
+            ctx.fillText(`Vel. Final: ${Math.trunc(Math.abs(vA_final) * 100) / 100} km/h`, leftCol, boxY + (120 * scaleFactor));
             // Daño en pequeño
             ctx.font = `italic ${16 * scaleFactor}px "Segoe UI", sans-serif`;
             ctx.fillStyle = '#95a5a6';
@@ -536,8 +582,8 @@ function run() {
             ctx.fillText(`VEHÍCULO B (${typeB})`, rightCol, boxY + (80 * scaleFactor));
             ctx.font = `${18 * scaleFactor}px "Segoe UI", sans-serif`;
             ctx.fillStyle = '#ecf0f1';
-            ctx.fillText(`Vel. Inicial: ${Math.abs(vB_initial).toFixed(1)} km/h`, rightCol, boxY + (100 * scaleFactor));
-            ctx.fillText(`Vel. Final: ${vB_final.toFixed(1)} km/h`, rightCol, boxY + (120 * scaleFactor));
+            ctx.fillText(`Vel. Inicial: ${speedB.toFixed(1)} km/h`, rightCol, boxY + (100 * scaleFactor));
+            ctx.fillText(`Vel. Final: ${Math.trunc(Math.abs(vB_final) * 100) / 100} km/h`, rightCol, boxY + (120 * scaleFactor));
             // Daño en pequeño
             ctx.font = `italic ${16 * scaleFactor}px "Segoe UI", sans-serif`;
             ctx.fillStyle = '#95a5a6';
@@ -556,7 +602,10 @@ function run() {
                 // Impacto detectado
                 hasCollided = true;
                 
-                // Actualizar velocidades a las resultantes del choque
+                // Actualizar velocidades post-choque SIN INVERTIR A/B
+                // vA_final y vB_final ya tienen signo correcto de la física:
+                // - Positivo: hacia la derecha
+                // - Negativo: hacia la izquierda
                 currentVA = vA_final;
                 currentVB = vB_final;
 

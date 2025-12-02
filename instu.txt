@@ -1,0 +1,417 @@
+Resumen corto (la causa)
+
+Tu simulador está calculando la solución para un choque frontal (vehículos yendo uno contra otro: A → derecha, B → izquierda).
+Para ese caso el cálculo que usas:
+
+const vCM = (mA * speedA + mB * speedB) / (mA + mB);
+const vRel = speedA + speedB;
+const vA_final = vCM - (mB / (mA + mB)) * e * vRel;
+const vB_final = vCM + (mA / (mA + mB)) * e * vRel;
+
+
+produce exactamente los valores que estás viendo: para vA=10, vB=5, e=0.8 → vA_final = 1.5 y vB_final = 13.5.
+Eso no es un bug: es la solución correcta para el escenario frontal/opuesto.
+
+Lo que tú (y yo en una pasada anterior) esperaban —vA_final = 5.5 y vB_final = 9.5— corresponde al caso ambos en la misma dirección (rear-end / colisión por alcance), donde las velocidades iniciales llevan el mismo signo (por ejemplo, A = +10, B = +5).
+
+En resumen: hay una discrepancia entre la configuración física esperada (mis cálculos anteriores) y el modelo que tu simulador está usando (choque frontal).
+
+Prueba rápida (numérica) para dejarlo claro
+
+Caso A (mismo sentido — rear-end):
+
+𝑣
+𝐴
+,
+𝑖
+=
+10
+,
+  
+𝑣
+𝐵
+,
+𝑖
+=
+5
+,
+  
+𝑒
+=
+0.8
+v
+A,i
+	​
+
+=10,v
+B,i
+	​
+
+=5,e=0.8 (ambos positivos)
+
+Resultado correcto: 
+𝑣
+𝐴
+,
+𝑓
+=
+5.5
+,
+  
+𝑣
+𝐵
+,
+𝑓
+=
+9.5
+v
+A,f
+	​
+
+=5.5,v
+B,f
+	​
+
+=9.5.
+
+Caso B (frontal/opuestos — tu simulador):
+Si B viene en sentido contrario, su velocidad con signo es 
+−
+5
+−5. Aplicando las fórmulas generales se obtiene:
+
+Resultado correcto: 
+𝑣
+𝐴
+,
+𝑓
+=
+1.5
+,
+  
+𝑣
+𝐵
+,
+𝑓
+=
+13.5
+v
+A,f
+	​
+
+=1.5,v
+B,f
+	​
+
+=13.5.
+
+Solución recomendada (robusta): usar la formulación general con signos
+
+En lugar de asumir magnitudes y ramas separadas, usa la formulación general que funciona para cualquier colisión 1D (rear-end o frontal). Esta usa velocidades con signo y las dos ecuaciones:
+
+conservación del momento: 
+𝑚
+𝐴
+𝑣
+𝐴
+,
+𝑖
++
+𝑚
+𝐵
+𝑣
+𝐵
+,
+𝑖
+=
+𝑚
+𝐴
+𝑣
+𝐴
+,
+𝑓
++
+𝑚
+𝐵
+𝑣
+𝐵
+,
+𝑓
+m
+A
+	​
+
+v
+A,i
+	​
+
++m
+B
+	​
+
+v
+B,i
+	​
+
+=m
+A
+	​
+
+v
+A,f
+	​
+
++m
+B
+	​
+
+v
+B,f
+	​
+
+
+coeficiente de restitución: 
+𝑒
+=
+𝑣
+𝐵
+,
+𝑓
+−
+𝑣
+𝐴
+,
+𝑓
+𝑣
+𝐴
+,
+𝑖
+−
+𝑣
+𝐵
+,
+𝑖
+e=
+v
+A,i
+	​
+
+−v
+B,i
+	​
+
+v
+B,f
+	​
+
+−v
+A,f
+	​
+
+	​
+
+
+Resolviendo ese sistema obtienes (válido con signos):
+
+𝑣
+𝐴
+,
+𝑓
+=
+𝑚
+𝐴
+𝑣
+𝐴
+,
+𝑖
++
+𝑚
+𝐵
+𝑣
+𝐵
+,
+𝑖
+−
+𝑚
+𝐵
+𝑒
+(
+𝑣
+𝐴
+,
+𝑖
+−
+𝑣
+𝐵
+,
+𝑖
+)
+𝑚
+𝐴
++
+𝑚
+𝐵
+v
+A,f
+	​
+
+=
+m
+A
+	​
+
++m
+B
+	​
+
+m
+A
+	​
+
+v
+A,i
+	​
+
++m
+B
+	​
+
+v
+B,i
+	​
+
+−m
+B
+	​
+
+e(v
+A,i
+	​
+
+−v
+B,i
+	​
+
+)
+	​
+
+𝑣
+𝐵
+,
+𝑓
+=
+𝑚
+𝐴
+𝑣
+𝐴
+,
+𝑖
++
+𝑚
+𝐵
+𝑣
+𝐵
+,
+𝑖
++
+𝑚
+𝐴
+𝑒
+(
+𝑣
+𝐴
+,
+𝑖
+−
+𝑣
+𝐵
+,
+𝑖
+)
+𝑚
+𝐴
++
+𝑚
+𝐵
+v
+B,f
+	​
+
+=
+m
+A
+	​
+
++m
+B
+	​
+
+m
+A
+	​
+
+v
+A,i
+	​
+
++m
+B
+	​
+
+v
+B,i
+	​
+
++m
+A
+	​
+
+e(v
+A,i
+	​
+
+−v
+B,i
+	​
+
+)
+	​
+
+Parche JS que te deja el cálculo correcto y explícito
+
+Pega/reemplaza la sección donde calculas vA_final y vB_final (la parte que ahora usa vCM y vRel) por esto. Además añadí una opción collisionMode para que puedas elegir 'frontal' o 'mismaDireccion' (si quieres mantener interacción por UI, puedes mapear desde un select).
+
+// --- Reemplazar el bloque actual de cálculo por este ---
+// collisionMode: 'frontal' | 'mismaDireccion'
+const collisionMode = 'frontal'; // o 'mismaDireccion' según lo que quieras modelar
+
+// Velocidades iniciales con signo (convención: A -> derecha = positivo)
+let vA_i = speedA;        // A siempre positivo
+let vB_i;
+
+// Dependiendo del modo, B será positivo (mismo sentido) o negativo (frontal)
+if (collisionMode === 'mismaDireccion') {
+    vB_i = speedB;       // ambos con mismo signo
+} else {
+    vB_i = -speedB;      // B viene en sentido opuesto (frontal)
+}
+
+// Ahora aplicamos la fórmula general (no necesitamos vCM/vRel separados)
+const totalMomentum = mA * vA_i + mB * vB_i;
+const dv = vA_i - vB_i; // diferencia con signos incluida
+
+// Evitar división por cero si dv == 0 y e>0 (casi idénticas): la fórmula sigue funcionando
+const vA_final = ( totalMomentum - mB * e * dv ) / (mA + mB);
+const vB_final = ( totalMomentum + mA * e * dv ) / (mA + mB);
+
+// Si quieres mostrar magnitudes en la UI (sin signo), usa Math.abs cuando convenga.
+// Para la animación, asigna direction/signo según el resultado:
+
+
+Notas sobre integrar esto en tu código actual:
+
+Reemplaza el bloque que define vCM, vRel y las fórmulas por el bloque anterior.
+
+Si quieres mantener la lógica de currentVB = -speedB para la animación de aproximación, no la uses para el cálculo físico — usa vB_i (con signo) solo para la física y mantén currentVB para la animación previa al choque.
+
+Al finalizar el choque, asigna currentVA = vA_final y currentVB = vB_final (incluyen signo; si ambos salen positivos, ambos irán a la derecha; si uno queda negativo, irá a la izquierda).
